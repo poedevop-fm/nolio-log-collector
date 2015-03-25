@@ -1,0 +1,140 @@
+---
+# ansible-playbook collect_noliologs.yml --ask-sudo-pass -v --extra-vars "target=nolio-lab-mgmt"
+- name: Playbook for mgmt
+  hosts: '{{ target }}'
+  sudo : yes
+  gather_facts: yes
+  vars:
+    nolio_service_name: /etc/init.d/NolioASAP
+    temp_location: "/tmp"
+    nolio_server: 127.0.0.1
+    nolio_logsfolder: noliologshipper
+  tasks:
+    ##########
+    # 
+    # To find the install location and store the location to a var
+    #
+    - name: "find install location"
+      shell: "readlink -f '{{ nolio_service_name }}' | xargs dirname"
+      register: nolio_install_dir
+    ##########
+    # 
+    # To Get current time to epoch
+    #
+    - name: "find time"
+      shell: "echo {{ ansible_date_time.epoch }}"
+      register: mytime
+    ##########
+    # 
+    # Get fqdn
+    #
+    - name: "find fqdn"
+      shell: "echo {{ ansible_fqdn }}"
+      register: myhost
+    ##########
+    # 
+    # Run Kill -3 command three times to catch the exception in catalina.out file
+    #
+    - name: "type kill -3 for appending exceptions"
+      shell: "for ((i=0; i<3;i++)); do cat {{ nolio_install_dir.stdout }}/catalina.pid | xargs kill -3 ; done"
+
+    ##########
+    # 
+    # Find and remove old log, memdump files
+    #
+    - name: "remove old logs"
+      shell: "find . -name '{{ nolio_logsfolder }}_*' -print0 | xargs -0 rm -rf"
+      args:
+        chdir: '{{ temp_location }}'
+
+    - name: "remove old memlogfiles"
+      shell: "find . -maxdepth 1 -type f -name 'memdump*' -print0 | xargs -0 rm -rf"
+      args:
+        chdir: '{{ nolio_install_dir.stdout }}'
+
+    ##########
+    # 
+    # Make sure nolio temp location exists
+    #
+    - name: "create temp location so it's safe to delete later"
+      file: path="{{ temp_location }}/{{ nolio_logsfolder }}_jmxdata" state="directory"
+
+    ##########
+    # 
+    # Run Kill -3 command three times to catch the exception in catalina.out file
+    #
+    - name: "type kill -3 for appending exceptions"
+      shell: "for ((i=0; i<3;i++)); do echo top -bn1H > top$i.txt; done"
+      args:
+        chdir: '{{ temp_location }}/{{ nolio_logsfolder }}_jmxdata'
+
+    ##########
+    # 
+    # Collect the threadDump and memoryDump
+    #
+    - name: "collect threadDump from jmx"
+      shell: curl -s -X POST --user 'nolio:nolio' --data "operation=threadDump&objectname=com.nolio.nimi.jmx%3Aname%3DnimiJMX%2Ctype%3DNimiJMX" http://{{ nolio_server }}:20203/invoke > nolio_threadDump_{{ mytime.stdout }}.html
+      args:
+        chdir: '{{ temp_location }}/{{ nolio_logsfolder }}_jmxdata'
+
+    - name: "collect memoryDump from jmx"
+      shell: curl -s -X POST --user 'nolio:nolio' --data "operation=memoryDump&objectname=com.nolio.nimi.jmx%3Aname%3DnimiJMX%2Ctype%3DNimiJMX" http://{{ nolio_server }}:20203/invoke > nolio_memoryDump_{{ mytime.stdout }}.html
+      args:
+        chdir: '{{ temp_location }}/{{ nolio_logsfolder }}_jmxdata'
+    ##########
+    # 
+    # Copy the memdump to /tmp location
+    #
+    - name: "copy memdump file"
+      shell: "cp  memdump*.bin {{ temp_location }}/{{ nolio_logsfolder }}_jmxdata/"
+      args:
+        chdir: '{{ nolio_install_dir.stdout }}'
+    ##########
+    # 
+    # Zip the jmx data
+    # 
+    - name: "Zip memdump and threadDump files"
+      command: "env GZIP=-9 tar cvfz {{ temp_location }}/{{ nolio_logsfolder }}_jmxdata_{{ mytime.stdout }}.gz {{ temp_location }}/{{ nolio_logsfolder }}_jmxdata"
+    ##########
+    #
+    # Copy the logs to /tmp location
+    #
+
+    - name: "copy logs"
+      command: "cp -rL {{ nolio_install_dir.stdout }}/logs {{ temp_location }}/{{ nolio_logsfolder }}_logs"
+
+    ##########
+    #
+    # Zip the logs
+    #
+    - name: "Zip logs"
+      command: "env GZIP=-9 tar cvfz {{ temp_location }}/{{ nolio_logsfolder }}_logs_{{ mytime.stdout }}.gz {{ temp_location }}/{{ nolio_logsfolder }}_logs"
+
+    ##########
+    #
+    # Ship the logs
+    #
+
+    - name: "ship nolio logs to /tmp"
+      fetch: "src={{ temp_location }}/{{ nolio_logsfolder }}_logs_{{ mytime.stdout }}.gz dest={{ temp_location }}/{{ nolio_logsfolder }}_{{ mytime.stdout }}"
+
+    ##########
+    #
+    # Ship the jmx logs
+    #
+
+    - name: "ship jmx logs to /tmp"
+      fetch: "src={{ temp_location }}/{{ nolio_logsfolder }}_jmxdata_{{ mytime.stdout }}.gz dest={{ temp_location }}/{{ nolio_logsfolder }}_{{ mytime.stdout }}"
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,6 +10,6 @@ Playbook is used to collect the nolio logs for support from the management serve
 
 Update the source code to support the following roles - management server, execution server, agents
 
-## Credits
+## Contributors
 
 [Yosef Lifshits](github.com/theyosef)

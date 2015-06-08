@@ -1,0 +1,25 @@
+---
+# Ansbile playbook to get logs/configs and other details needed for nolio support.
+# To run the playbook 
+# roles are defined for each play. For the below play, ansible will execute the yaml file located at roles\nginx\tasks\main.yml
+# If defining varibles for the roles, it's defined as the same name as that of the hosts defined here
+- name: Collect logs/threaddump/memorydumps/configs
+  hosts: mgmt_server
+  roles:
+    - common
+    - NAC
+  sudo: yes
+
+- name: Collect NES server logs/configs
+  hosts: execution_servers
+  roles:
+    - common
+    - NES
+  sudo: yes
+
+- name: Collect Agent logs/configs
+  hosts: agents
+  roles:
+    - common
+    - agent
+  sudo: yes

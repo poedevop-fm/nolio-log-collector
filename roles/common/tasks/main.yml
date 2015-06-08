@@ -1,0 +1,35 @@
+---
+    ##########
+    # 
+    # To Get current time to epoch
+    #
+    - name: "find time"
+      shell: "echo {{ ansible_date_time.epoch }}"
+      register: mytime
+    ##########
+    # 
+    # Get fqdn
+    #
+    - name: "find fqdn"
+      shell: "echo {{ ansible_fqdn }}"
+      register: myhost
+
+
+    ##########
+    # 
+    # Find and remove old log, memdump files
+    #
+    - name: "remove old logs"
+      shell: "find . -name '{{ ansible_fqdn }}*' -print0 | xargs -0 rm -rf"
+      args:
+        chdir: '{{ temp_location }}'
+
+
+    ##########
+    # 
+    # Make sure nolio temp location exists
+    #
+    - name: "create temp location so it's safe to delete later"
+      file: path="{{ temp_location }}/{{ ansible_fqdn }}" state="directory"
+
+

@@ -1,0 +1,10 @@
+#Inventory file defining the hosts and their mapping
+[mgmt_server]
+mgmtserver.lab.domain.net
+
+[execution_servers]
+executionserver1.lab.domain.net
+
+[agents]
+executionserver1.prd.domain.net
+agen1.lab.domain.net

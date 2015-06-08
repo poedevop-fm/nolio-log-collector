@@ -1,0 +1,5 @@
+---
+# Variables listed here are applicable to all NAC servers
+
+
+nolio_agent_service: /etc/init.d/nolioagent

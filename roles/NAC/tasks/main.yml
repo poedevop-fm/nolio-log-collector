@@ -1,0 +1,105 @@
+---
+# ansible-playbook /Users/nithyans/Documents/CDK/Stash/ALM/ansible/playbooks/collect_mgmt_noliologs.yml --ask-sudo-pass -v --extra-vars "target=nolio-mgmt"
+# Tasks to run on the NAC server
+
+    ##########
+    # 
+    # To find the install location and store the location to a var
+    #
+    - name: "find install location"
+      shell: "readlink -f '{{ nolio_ASAP_service }}' | xargs dirname"
+      register: nolio_ASAP_install_dir
+
+
+    ##########
+    # 
+    # Run Kill -3 command three times to catch the exception in catalina.out file
+    #
+    - name: "type kill -3 for appending exceptions"
+      shell: "for ((i=0; i<3;i++)); do cat {{ nolio_ASAP_install_dir.stdout }}/catalina.pid | xargs kill -3 ; done"
+
+    ##########
+    # 
+    # Find and remove old memdump files
+    #
+
+    - name: "remove old memlogfiles"
+      shell: "find . -maxdepth 1 -type f -name 'memdump*' -print0 | xargs -0 rm -rf"
+      args:
+        chdir: '{{ nolio_ASAP_install_dir.stdout }}'
+
+    ##########
+    # 
+    # Make sure temp location exists
+    #
+    - name: "create temp location so it's safe to delete later"
+      file: path="{{ temp_location }}/{{ ansible_fqdn }}/NAC" state="directory"
+
+    ##########
+    # 
+    # Run Kill -3 command three times to catch the exception in catalina.out file
+    #
+    - name: "type kill -3 for appending exceptions"
+      shell: "for ((i=0; i<3;i++)); do echo top -bn1H > top$i.txt; done"
+      args:
+        chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
+
+    ##########
+    # 
+    # Run top  command to catch the processes exceptions
+    #
+    - name: "type top  command to list the process ID"
+      shell: "for ((i=0; i<3;i++)); do top -bn1H > top$i.txt; done"
+      args:
+        chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
+
+    #################################################
+    # Not supported in 5.5.1
+    ##################################################
+
+    ##########
+    # 
+    # Collect the threadDump and memoryDump
+    #
+    - name: "collect threadDump from jmx"
+      shell: curl -s -X POST --user 'nolio:nolio' --data "operation=threadDump&objectname=com.nolio.nimi.jmx%3Aname%3DnimiJMX%2Ctype%3DNimiJMX" http://{{ ansible_fqdn }}:20203/invoke > nolio_threadDump_{{ mytime.stdout }}.html
+      args:
+        chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
+      when: nolio_version == "5.0.2"
+
+    # 
+    # Collect the memoryDump
+    #
+
+    - name: "collect memoryDump from jmx"
+      shell: curl -s -X POST --user 'nolio:nolio' --data "operation=memoryDump&objectname=com.nolio.nimi.jmx%3Aname%3DnimiJMX%2Ctype%3DNimiJMX" http://{{ ansible_fqdn }}:20203/invoke > nolio_memoryDump_{{ mytime.stdout }}.html
+      args:
+        chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
+      when: nolio_version == "5.0.2"
+
+    #
+    # 
+    # Copy the memdump to /tmp location
+    #
+    - name: "copy memdump file"
+      shell: "cp  memdump*.bin {{ temp_location }}/{{ ansible_fqdn }}/NAC/"
+      args:
+        chdir: '{{ nolio_ASAP_install_dir.stdout }}'
+      when: nolio_version == "5.0.2"
+
+    ##########
+    #
+    # copy conf folder
+    #
+    - name: "copy configs"
+      command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/conf {{ temp_location }}/{{ ansible_fqdn }}/NAC/"
+
+    ##########
+    #
+    # Copy the agent logs to /tmp location
+    #
+    - name: "copy logs"
+      command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/logs {{ temp_location }}/{{ ansible_fqdn }}/NAC/"
+      notify:
+        - zip logs
+        - fetch the nolio logs to local machine

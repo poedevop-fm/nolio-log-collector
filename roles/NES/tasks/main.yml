@@ -1,0 +1,35 @@
+---
+# Playbook for an NES
+    ##########
+    # 
+    # To find the install location and store the location to a var
+    #
+    - name: "find install location"
+      shell: "readlink -f '{{ nolio_ASAP_service }}' | xargs dirname"
+      register: nolio_ASAP_install_dir
+
+
+    ##########
+    # 
+    # Make sure nolio temp location exists
+    #
+    - name: "create temp location so it's safe to delete later"
+      file: path="{{ temp_location }}/{{ ansible_fqdn }}/NES" state="directory"
+
+
+    ##########
+    #
+    # copy conf folder
+    #
+    - name: "copy configs"
+      command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/conf {{ temp_location }}/{{ ansible_fqdn }}/NES/"
+
+    ##########
+    #
+    # Copy the agent logs to /tmp location
+    #
+    - name: "copy logs"
+      command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/logs {{ temp_location }}/{{ ansible_fqdn }}/NES/"
+      notify:
+        - zip logs
+        - fetch the nolio logs to local machine

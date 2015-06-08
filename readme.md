@@ -1,15 +1,9 @@
-# To collect nolio logs
+#Ansible Playbook to collect logs, configs and jmx data for NAC, NES and Agents 
 
-Playbook is used to collect the nolio logs for support from the management server. 
-
-## PreRequisite
+### PreRequisite
 
 [Ansible hello world tutorials](http://www.sanjeevnandam.com/blog/ansible-hello-world)
 
-## To do
+### Specify each servers in the hosts file. If you have an agent installed in execution server, you may have to specify the instance twice. Once as a NES and once as agent
 
-Update the source code to support the following roles - management server, execution server, agents
-
-## Contributors
-
-[Yosef Lifshits](github.com/theyosef)
+ansible-playbook -i hosts_5.5.1_LAB site.yml -v --ask-sudo-pass

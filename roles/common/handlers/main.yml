@@ -1,0 +1,15 @@
+# Handler to run at the last after all the data is stored in the temp folder. Applies for all servers
+    ##########
+    #
+    # Zip the logs
+    #
+    - name: "zip logs"
+      command: "env GZIP=-9 tar cvfz {{ temp_location }}/{{ ansible_fqdn }}_{{ mytime.stdout }}.gz {{ temp_location }}/{{ ansible_fqdn }}"
+
+    ##########
+    #
+    # Ship the logs
+    #
+
+    - name: "fetch the nolio logs to local machine"
+      fetch: "src={{ temp_location }}/{{ ansible_fqdn }}_{{ mytime.stdout }}.gz dest={{ fetch_location }}/ flat=yes"

@@ -5,3 +5,10 @@
 temp_location: "/tmp"
 # location in the ansible box to fetch the logs to
 fetch_location: "/tmp"
+
+# collect logs
+collect_logs : "true"
+
+# stop, clean up temp files and start the services back
+restart_services : "false"
+cleanup_tempfiles : "false"

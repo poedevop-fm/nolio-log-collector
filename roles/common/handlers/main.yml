@@ -1,10 +1,12 @@
 # Handler to run at the last after all the data is stored in the temp folder. Applies for all servers
+# Handlers are run in the order listed and not in the order notified
     ##########
     #
     # Zip the logs
     #
     - name: "zip logs"
       command: "env GZIP=-9 tar cvfz {{ temp_location }}/{{ ansible_fqdn }}_{{ mytime.stdout }}.gz {{ temp_location }}/{{ ansible_fqdn }}"
+      when: collect_logs == "true"
 
     ##########
     #
@@ -13,3 +15,84 @@
 
     - name: "fetch the nolio logs to local machine"
       fetch: "src={{ temp_location }}/{{ ansible_fqdn }}_{{ mytime.stdout }}.gz dest={{ fetch_location }}/ flat=yes"
+      when: collect_logs == "true"
+
+    #########
+    #
+    # Stop nolio agent
+    #
+    - name: "stop nolioagent"
+      service: name=nolioagent state=stopped
+      when: restart_services == "true"
+
+    #########
+    #
+    # Stop nolio ASAP
+    #
+    - name: "stop NolioASAP"
+      service: name=NolioASAP state=stopped
+      when: restart_services == "true"
+
+
+    ##########
+    # 
+    # Remove log files and temporary files
+    #
+    - name: "remove temporary files and logs"
+      shell: "find . -maxdepth 1 -type f -name '*' -print0 | xargs -0 rm -rf"
+      args:
+        chdir: '{{ item }}'
+      with_items:
+        - '{{ nolio_agent_install_dir.stdout }}/logs'
+        - '{{ nolio_agent_install_dir.stdout }}/files_temp'
+        - '{{ nolio_agent_install_dir.stdout }}/files_cache'
+        - '{{ nolio_agent_install_dir.stdout }}/files_registry'
+      ignore_errors: yes
+      when: cleanup_tempfiles == "true"
+
+
+    ##########
+    # 
+    # Remove log files and temporary files
+    #
+    - name: "remove temporary files and logs from NAC and NES"
+      shell: "find . -maxdepth 1 -type f -name '*' -print0 | xargs -0 rm -rf"
+      args:
+        chdir: '{{ item }}'
+      with_items:
+        - '{{ nolio_ASAP_install_dir.stdout }}/logs'
+        - '{{ nolio_ASAP_install_dir.stdout }}/files_temp'
+        - '{{ nolio_ASAP_install_dir.stdout }}/files_cache'
+        - '{{ nolio_ASAP_install_dir.stdout }}/files_registry'
+      ignore_errors: yes
+      when: cleanup_tempfiles == "true"
+
+
+    ##########
+    # 
+    # Remove log files and temporary files
+    #
+    - name: "remove activemq data from NAC and NES"
+      shell: "find . ! -path . -type d -name '*' -print0 | xargs -0 rm -rf"
+      args:
+        chdir: '{{ item }}'
+      with_items:
+        - '{{ nolio_ASAP_install_dir.stdout }}/activemq-data'
+      when: cleanup_tempfiles == "true"
+
+
+    #########
+    #
+    # start nolio agent
+    #
+    - name: "start nolioagent"
+      service: name=nolioagent state=started
+      when: restart_services == "true"
+
+    #########
+    #
+    # start nolio ASAP
+    #
+    - name: "start NolioASAP"
+      service: name=NolioASAP state=started
+      when: restart_services == "true"

@@ -17,6 +17,7 @@
     #
     - name: "type kill -3 for appending exceptions"
       shell: "for ((i=0; i<3;i++)); do cat {{ nolio_ASAP_install_dir.stdout }}/catalina.pid | xargs kill -3 ; done"
+      when: collect_logs == "true"
 
     ##########
     # 
@@ -37,21 +38,14 @@
 
     ##########
     # 
-    # Run Kill -3 command three times to catch the exception in catalina.out file
+    # Run top command
     #
-    - name: "type kill -3 for appending exceptions"
+    - name: "type top command to get running processes"
       shell: "for ((i=0; i<3;i++)); do echo top -bn1H > top$i.txt; done"
       args:
         chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
+      when: collect_logs == "true"
 
-    ##########
-    # 
-    # Run top  command to catch the processes exceptions
-    #
-    - name: "type top  command to list the process ID"
-      shell: "for ((i=0; i<3;i++)); do top -bn1H > top$i.txt; done"
-      args:
-        chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
 
     #################################################
     # Not supported in 5.5.1
@@ -65,8 +59,7 @@
       shell: curl -s -X POST --user 'nolio:nolio' --data "operation=threadDump&objectname=com.nolio.nimi.jmx%3Aname%3DnimiJMX%2Ctype%3DNimiJMX" http://{{ ansible_fqdn }}:20203/invoke > nolio_threadDump_{{ mytime.stdout }}.html
       args:
         chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
-      when: nolio_version == "5.0.2"
-
+      when: nolio_version == "5.0.2" and collect_logs == "true"
     # 
     # Collect the memoryDump
     #
@@ -75,8 +68,7 @@
       shell: curl -s -X POST --user 'nolio:nolio' --data "operation=memoryDump&objectname=com.nolio.nimi.jmx%3Aname%3DnimiJMX%2Ctype%3DNimiJMX" http://{{ ansible_fqdn }}:20203/invoke > nolio_memoryDump_{{ mytime.stdout }}.html
       args:
         chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
-      when: nolio_version == "5.0.2"
-
+      when: nolio_version == "5.0.2" and collect_logs == "true"
     #
     # 
     # Copy the memdump to /tmp location
@@ -85,7 +77,8 @@
       shell: "cp  memdump*.bin {{ temp_location }}/{{ ansible_fqdn }}/NAC/"
       args:
         chdir: '{{ nolio_ASAP_install_dir.stdout }}'
-      when: nolio_version == "5.0.2"
+      when: nolio_version == "5.0.2" and collect_logs == "true"
+
 
     ##########
     #
@@ -93,6 +86,7 @@
     #
     - name: "copy configs"
       command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/conf {{ temp_location }}/{{ ansible_fqdn }}/NAC/"
+      when: collect_logs == "true"
 
     ##########
     #
@@ -100,6 +94,19 @@
     #
     - name: "copy logs"
       command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/logs {{ temp_location }}/{{ ansible_fqdn }}/NAC/"
+      when: collect_logs == "true"
+
+    ##########
+    #
+    # Provide a finishing touch
+    #  
+    - name: "wrap up"
+      command: "echo"
       notify:
         - zip logs
         - fetch the nolio logs to local machine
+        - stop NolioASAP
+        - remove temporary files and logs from NAC and NES
+        - remove activemq data from NAC and NES
+        - start NolioASAP
+

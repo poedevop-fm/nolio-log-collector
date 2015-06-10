@@ -23,6 +23,7 @@
     #
     - name: "copy configs"
       command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/conf {{ temp_location }}/{{ ansible_fqdn }}/NES/"
+      when: collect_logs == "true"
 
     ##########
     #
@@ -30,6 +31,18 @@
     #
     - name: "copy logs"
       command: "cp -rL {{ nolio_ASAP_install_dir.stdout }}/logs {{ temp_location }}/{{ ansible_fqdn }}/NES/"
+      when: collect_logs == "true"
+
+    ##########
+    #
+    # Provide a finishing touch
+    #  
+    - name: "wrap up"
+      command: "echo"
       notify:
         - zip logs
         - fetch the nolio logs to local machine
+        - stop NolioASAP
+        - remove temporary files and logs from NAC and NES
+        - remove activemq data from NAC and NES
+        - start NolioASAP

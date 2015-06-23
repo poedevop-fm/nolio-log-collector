@@ -41,7 +41,7 @@
     # Run top command
     #
     - name: "type top command to get running processes"
-      shell: "for ((i=0; i<3;i++)); do echo top -bn1H > top$i.txt; done"
+      shell: "for ((i=0; i<3;i++)); do top -bn1H > top$i.txt; done"
       args:
         chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
       when: collect_logs == "true"

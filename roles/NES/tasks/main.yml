@@ -8,6 +8,22 @@
       shell: "readlink -f '{{ nolio_ASAP_service }}' | xargs dirname"
       register: nolio_ASAP_install_dir
 
+    ##########
+    # 
+    # Update logging levels to be able to catch issues when needed
+    #
+    - name: "Update logging RegularExecution"
+      lineinfile: dest="{{ nolio_ASAP_install_dir.stdout }}/webapps/execution/WEB-INF/log4j.properties" regexp=^log4j.appender.RegularExecution.MaxBackupIndex= line=log4j.appender.RegularExecution.MaxBackupIndex={{ log_file_count }}
+      when: update_logging == "true"
+
+    - name: "Update logging ExecutionFileAppender"
+      lineinfile: dest="{{ nolio_ASAP_install_dir.stdout }}/webapps/execution/WEB-INF/log4j.properties" regexp=^log4j.appender.ExecutionFileAppender.MaxBackupIndex= line=log4j.appender.ExecutionFileAppender.MaxBackupIndex={{ log_file_count }}
+      when: update_logging == "true"
+
+    - name: "Update logging NimiFileAppender"
+      lineinfile: dest="{{ nolio_ASAP_install_dir.stdout }}/webapps/execution/WEB-INF/log4j.properties" regexp=^log4j.appender.NimiFileAppender.MaxBackupIndex= line=log4j.appender.NimiFileAppender.MaxBackupIndex={{ log_file_count }}
+      when: update_logging == "true"
+
 
     ##########
     # 

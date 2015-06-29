@@ -29,7 +29,7 @@ ansible-playbook -i hosts_5.5.1_LAB site.yml -v --ask-sudo-pass
      * Copy logs folder
  * NES and Agents
      * Copy conf folder
-     * Copy logs folder\
+     * Copy logs folder
 6. Update logging levels (Make sure you have sufficient disk space before applying change)
  * group_vars/all/{update_logging} and group_vars/all/{log_file_count}
  * restart_services should be set to "true" when you are ready to restart the services for the change to take effect

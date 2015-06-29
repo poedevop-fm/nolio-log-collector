@@ -1,6 +1,6 @@
-#Ansible Playbook to collect logs, configs and jmx data for NAC, NES and Agents 
+##Ansible Playbook to collect logs, configs and jmx data for NAC, NES and Agents 
 
-### PreRequisite
+#### PreRequisite
 
 [Ansible hello world tutorials](http://www.sanjeevnandam.com/blog/ansible-hello-world)
 
@@ -8,7 +8,7 @@ Specify each servers in the hosts file. If you have an agent installed in execut
 
 ansible-playbook -i hosts_5.5.1_LAB site.yml -v --ask-sudo-pass
 
-### Features
+#### Features
 1. Organize each server type by it's role. Same server can be defined in two different roles. For example a NES can also be listed as an agent
 2. Specify fetch location in the master ansible server and temp location in the target nodes to store the logs
  * group_vars/all/{temp_location}

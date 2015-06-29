@@ -10,6 +10,14 @@
       shell: "readlink -f '{{ nolio_ASAP_service }}' | xargs dirname"
       register: nolio_ASAP_install_dir
 
+    ##########
+    # 
+    # Update logging levels to be able to catch issues when needed
+    #
+    - name: "update logging"
+      lineinfile: dest="{{ nolio_ASAP_install_dir.stdout }}/webapps/datamanagement/WEB-INF/log4j.properties" regexp=^log4j.appender.RegularDM.MaxBackupIndex= line=log4j.appender.RegularDM.MaxBackupIndex={{ log_file_count }}
+      when: update_logging == "true"
+
 
     ##########
     # 
@@ -48,7 +56,7 @@
 
 
     #################################################
-    # Not supported in 5.5.1
+    # Tested in 5.0.2
     ##################################################
 
     ##########
@@ -79,7 +87,37 @@
         chdir: '{{ nolio_ASAP_install_dir.stdout }}'
       when: nolio_version == "5.0.2" and collect_logs == "true"
 
+    #################################################
+    # Tested in 5.5.1
+    ##################################################
 
+    ##########
+    # 
+    # Collect the threadDump and memoryDump
+    #
+    - name: "collect threadDump from jmx"
+      shell: curl -s -X POST --user 'nolio:nolio' --data "operation=requestStackTrace&objectname=noliocenter%3Atype%3Dinfo" http://{{ ansible_fqdn }}:20203/invoke > nolio_threadDump_{{ mytime.stdout }}.html
+      args:
+        chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
+      when: nolio_version == "5.5.1" and collect_logs == "true"
+    # 
+    # Collect the memoryDump
+    #
+
+    - name: "collect memoryDump from jmx"
+      shell: curl -s -X POST --user 'nolio:nolio' --data "operation=dumpHeap&objectname=com.sun.management%3Atype%3DHotSpotDiagnostic&value0=memdump_{{ mytime.stdout }}.bin&type0=java.lang.String&value1=true&type1=boolean" http://{{ ansible_fqdn }}:20203/invoke > nolio_memoryDump_{{ mytime.stdout }}.html
+      args:
+        chdir: '{{ temp_location }}/{{ ansible_fqdn }}/NAC'
+      when: nolio_version == "5.5.1" and collect_logs == "true"
+    #
+    # 
+    # Copy the memdump to /tmp location
+    #
+    - name: "copy memdump file"
+      shell: "cp  memdump*.bin {{ temp_location }}/{{ ansible_fqdn }}/NAC/"
+      args:
+        chdir: '{{ nolio_ASAP_install_dir.stdout }}'
+      when: nolio_version == "5.5.1" and collect_logs == "true"
     ##########
     #
     # copy conf folder

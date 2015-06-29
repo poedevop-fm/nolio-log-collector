@@ -9,6 +9,10 @@ fetch_location: "/tmp"
 # collect logs
 collect_logs : "true"
 
+# increase logging level
+update_logging : "false"
+log_file_count : "30"
+
 # stop, clean up temp files and start the services back
 restart_services : "false"
 cleanup_tempfiles : "false"

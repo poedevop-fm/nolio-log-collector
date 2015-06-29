@@ -11,6 +11,23 @@
 
     ##########
     # 
+    # Update logging levels to be able to catch issues when needed
+    #
+    - name: "Update logging Regular"
+      lineinfile: dest="{{ nolio_agent_install_dir.stdout }}/conf/log4j.properties" regexp=^log4j.appender.Regular.MaxBackupIndex= line=log4j.appender.Regular.MaxBackupIndex={{ log_file_count }}
+      when: update_logging == "true"
+
+    - name: "Update logging NimiFileAppender"      
+      lineinfile: dest="{{ nolio_agent_install_dir.stdout }}/conf/log4j.properties" regexp=^log4j.appender.NimiFileAppender.MaxBackupIndex= line=log4j.appender.NimiFileAppender.MaxBackupIndex={{ log_file_count }}
+      when: update_logging == "true"
+
+    - name: "Update logging ActionsAppender"      
+      lineinfile: dest="{{ nolio_agent_install_dir.stdout }}/conf/log4j.properties" regexp=^log4j.appender.ActionsAppender.MaxBackupIndex= line=log4j.appender.ActionsAppender.MaxBackupIndex={{ log_file_count }}
+      when: update_logging == "true"
+
+
+    ##########
+    # 
     # Make sure nolio temp location exists
     #
     - name: "create temp location so it's safe to delete later"
